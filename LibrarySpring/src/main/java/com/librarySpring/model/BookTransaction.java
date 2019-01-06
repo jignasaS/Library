@@ -3,6 +3,7 @@ package com.librarySpring.model;
 import java.io.Serializable;
 import java.sql.Date;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -13,6 +14,9 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import javax.xml.bind.annotation.XmlRootElement;
+
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -32,8 +36,9 @@ public class BookTransaction implements Serializable{
 	@Column(name="transaction_id")
 	private int trnxId;
 	
-	@ManyToOne(fetch=FetchType.LAZY)
-	@JoinColumn(name="book_id",nullable=false)
+	@ManyToOne(cascade= {CascadeType.ALL},fetch=FetchType.LAZY,targetEntity=Book.class)
+	@OnDelete(action = OnDeleteAction.CASCADE)
+	@JoinColumn(name="book_id",referencedColumnName="book_id",columnDefinition="int",nullable=false)
 	private Book book;
 	
 	@ManyToOne(fetch=FetchType.LAZY)

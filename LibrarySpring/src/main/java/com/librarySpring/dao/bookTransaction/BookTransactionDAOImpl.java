@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.hibernate.usertype.LoggableUserType;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
 
 import com.librarySpring.controller.TransactionController;
+import com.librarySpring.dao.Book.BookDAOImpl;
 import com.librarySpring.dao.User.userDAOImpl;
 import com.librarySpring.model.Book;
 import com.librarySpring.model.BookTransaction;
@@ -81,7 +83,13 @@ public class BookTransactionDAOImpl implements BookTrnasactionDAO {
 		
 	}
 
-	
+	/**
+	 * 1. Book already issued cannot be issued again
+	 * 2.User cannot have more than 2 books,if he is adult,for kids(boys) 4 books and for girls its 6
+	 * @param book_id
+	 * @param userId
+	 * @return
+	 */
 	private int isBookUserValid(int book_id, int userId) {
 		// TODO Auto-generated method stub
 		logger.info(" << BookTransactionDAOImpl.isBookUserValid entry >>");
@@ -95,6 +103,7 @@ public class BookTransactionDAOImpl implements BookTrnasactionDAO {
 		for(BookTransaction b:bookTranxList)
 		{
 			logger.debug("status::"+b.getBook().getBook_id());
+			//check issue status
 			if(b.getBook().getBook_id() == book_id && b.getIssueStatus() == GlobalValue.issued_status)
 			{	
 				logger.debug(b.getBook().getBook_id()+" status "+b.getIssueStatus());
@@ -121,11 +130,48 @@ public class BookTransactionDAOImpl implements BookTrnasactionDAO {
 	public ArrayList<BookTransaction> getBookAllTransaction(int book_id,int userId) {
 		// TODO Auto-generated method stub
 		logger.info(" << BookTransactionDAOImpl.getBookAllTransaction entry >>");
-		//ArrayList<BookTransaction> bookTranxList=(ArrayList<BookTransaction>) entityManager.createQuery("from BookTransaction b where b.book.bookid = :book_id").setParameter("bookid", "book_id").getResultList();
-		//ArrayList<BookTransaction> bookTranxList=(ArrayList<BookTransaction>) entityManager.createQuery("from BookTransaction bt  where bt.book.book_id = :book_id").setParameter("book_id", book_id).getResultList();
 		ArrayList<BookTransaction> bookTranxList=(ArrayList<BookTransaction>) entityManager.createQuery("from BookTransaction bt  where bt.book.book_id = :book_id OR bt.user.userId = :userId").setParameter("book_id",book_id).setParameter("userId",userId).getResultList();
 		logger.info(" << BookTransactionDAOImpl.getBookAllTransaction exit >>");
 		return bookTranxList;
+	}
+	
+	/**
+	 * get book transaction detail from its id and status
+	 * @param book_id
+	 * @return
+	 */
+	public ArrayList<BookTransaction> getBookAllByIdWithStatus(int book_id,int issueStatus) {
+		// TODO Auto-generated method stub
+		try {
+			logger.info(" << BookTransactionDAOImpl.getBookAllById entry >>");
+			ArrayList<BookTransaction> bookTranxList=(ArrayList<BookTransaction>) entityManager.createQuery("from BookTransaction bt  where bt.book.book_id = :book_id AND bt.issueStatus = :issueStatus ").setParameter("book_id",book_id).setParameter("issueStatus", issueStatus).getResultList();
+			logger.info(" << BookTransactionDAOImpl.getBookAllById exit >>");
+			return bookTranxList;
+		}
+		catch(Exception e)
+		{
+			logger.debug(e.getMessage());
+			logger.error(e);
+			return null;
+		}
+		
+	}
+	
+	public ArrayList<BookTransaction> getBookAllById(int book_id) {
+		// TODO Auto-generated method stub
+		try {
+			logger.info(" << BookTransactionDAOImpl.getBookAllById entry >>");
+			ArrayList<BookTransaction> bookTranxList=(ArrayList<BookTransaction>) entityManager.createQuery("from BookTransaction bt  where bt.book.book_id = :book_id ").setParameter("book_id",book_id).getResultList();
+			logger.info(" << BookTransactionDAOImpl.getBookAllById exit >>");
+			return bookTranxList;
+		}
+		catch(Exception e)
+		{
+			logger.debug(e.getMessage());
+			logger.error(e);
+			return null;
+		}
+		
 	}
 	
 	public ArrayList<BookTransaction> getBookAllTransactionForUser(int book_id,int userId) {
@@ -218,55 +264,58 @@ public class BookTransactionDAOImpl implements BookTrnasactionDAO {
 
 
 	@Override
-	public void deleteBook(int book_id) {
+	public int deleteBook(int book_id) {
+		// TODO Auto-generated method stub
+		logger.info(" << BookTransactionDAOImpl.deleteBook entry >>");
+		ArrayList<BookTransaction> bookTranxList = getBookAllByIdWithStatus(book_id,GlobalValue.issued_status);
+		
+		//Check whether book is issued already(Can't delete that book)
+		if(bookTranxList == null || bookTranxList.size() == 0)
+		{
+		    int result = deleteBookOp(book_id);
+		    if(result == GlobalValue.SUCCESS)
+			{
+		    	logger.info(" << BookTransactionDAOImpl.deleteBook exit >>");
+		    	return GlobalValue.bookDeletedSuccessfully;
+			}
+		    else
+		    {
+		    	logger.info("ERROR");
+				logger.info(" << BookTransactionDAOImpl.deleteBook exit >>");
+				return GlobalValue.FAIL;
+		    }
+			
+		}
+		else
+		{
+			logger.info(GlobalValue.bookIssuedAlreadyMsg);
+			logger.info(" << BookTransactionDAOImpl.deleteBook exit >>");
+			return GlobalValue.bookDeletedFailed;
+		}
+	}
+
+	private int deleteBookOp(int book_id) {
 		// TODO Auto-generated method stub
 		
+			logger.info("<< BookTransactionDAOImpl.deleteBookOp  entry>>");
+			try {
+				logger.info("book id = "+book_id);
+				Book b=entityManager.find(Book.class,book_id);
+				ArrayList<BookTransaction> bookTranxList = getBookAllById(book_id);
+				
+				b.setBookTransactions(bookTranxList);
+				logger.info("book = "+b.getBookname());
+				entityManager.remove(b);
+				logger.info("<< BookTransactionDAOImpl.deleteBookOp  exit>>");
+				return GlobalValue.SUCCESS;
+			}
+			catch(Exception e)
+			{
+				logger.debug(e.getMessage());
+				logger.error(e.getMessage(), e);
+				logger.log(Level.INFO, e.getMessage(), e);
+				return GlobalValue.FAIL;
+			}
 	}
-
-	@Override
-	public User userFined(int userID) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public ArrayList<BookTransaction> getAllBookTransaction() {
-		// TODO Auto-generated method stub
-		ArrayList<BookTransaction> bookTranxList=(ArrayList<BookTransaction>) entityManager.createQuery("from BookTransaction").getResultList();
-		return bookTranxList;
-	}
-
-	/*@Override
-	public void createBook(Book book) {
-		// TODO Auto-generated method stub
-		entityManager.persist(book);
-	}
-
-	@Override
-	public Book getBookByISBN(int id) {
-		// TODO Auto-generated method stub
-		return entityManager.find(Book.class,id);
-	}
-
-	@Override
-	public void updateBook(Book book) {
-		// TODO Auto-generated method stub
-		entityManager.merge(book);
-	}
-
-	@Override
-	public void deleteBook(int id) {
-		// TODO Auto-generated method stub
-		Book b= entityManager.find(Book.class,id);
-		entityManager.remove(b);
-		
-	}
-
-	@Override
-	public ArrayList<Book> getAllBook() {
-		// TODO Auto-generated method stub
-		ArrayList<Book> bookList=(ArrayList<Book>) entityManager.createQuery("from Book").getResultList();
-		return bookList;
-	}*/
 
 }

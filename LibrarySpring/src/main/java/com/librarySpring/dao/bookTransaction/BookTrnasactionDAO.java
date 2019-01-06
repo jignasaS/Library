@@ -15,9 +15,6 @@ public interface BookTrnasactionDAO {
 		
 		public Status returnBook(int book_id,int userId);
 	    
-	    public void deleteBook(int book_id);
+	    public int deleteBook(int book_id);
 	    
-	    public User userFined(int userID);
-	    
-	    public ArrayList<BookTransaction> getAllBookTransaction();
 }

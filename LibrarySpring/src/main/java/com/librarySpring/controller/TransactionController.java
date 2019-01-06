@@ -80,18 +80,29 @@ public class TransactionController {
 		}
 		
 	}
-	/*@RequestMapping(value ="book/{id}",produces="application/json",method=RequestMethod.GET)
-	  public Book getStudentById(@PathVariable("id") int id)
+	/** Delete a book **/
+	@RequestMapping(value ="deletebook/{id}",produces="application/json",method=RequestMethod.POST)
+	public @ResponseBody 
+	Status deleteBook(@PathVariable("id") int id)
 	    {
-	        Book book = bookDAOImpl.getBookByISBN(id);
-	        return book;
+		try
+		{
+			logger.info("Book delete process started");
+			int resultState = bookTransactionDAOImpl.deleteBook(id);
+			logger.info("Book deleted successfully");
+			if(resultState == GlobalValue.bookDeletedSuccessfully)
+			return new Status(GlobalValue.bookDeletedSuccessfully, GlobalValue.bookDeletedSuccess);
+			else if(resultState == GlobalValue.bookDeletedFailed)
+			return new Status(GlobalValue.bookDeletedFailed, GlobalValue.bookDeletedFail);
+			else
+			return new Status(0,"Error");
+			
+		}
+		catch(Exception e)
+		{
+			logger.error(e);
+			return new Status(0,e.toString());
+		}
 	    }
-	*/
-	/*** Retrieve all Book transaction ***/
-	@RequestMapping(value ="bookstransaction",produces="application/json",method=RequestMethod.GET)
-	  public  ArrayList<BookTransaction> getAllBooksTransactions()
-	    {
-	        ArrayList<BookTransaction> booksTransaction = bookTransactionDAOImpl.getAllBookTransaction();
-	        return booksTransaction;
-	    }
+	
 }

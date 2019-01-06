@@ -13,9 +13,16 @@ public class GlobalValue {
 	public static String bookReturnedWithFined = " Book returned after due date so your fined is";
 	public static String bookReturnedFailed = "Book returned failed";
 	
+	public static String bookDeletedSuccess = "Book deleted Successfully";
+	public static String bookDeletedFail = "Book issued already so it canSnot be deleted";
+	
 	public static int bookIssueSuccessState = 1;
 	public static int bookIssuedAlready = 2;
 	public static int bookIssueLimitExceed =3;
+
+	
+	public static int bookDeletedSuccessfully = 1;
+	public static int bookDeletedFailed = 2;
 	
 	public static int adultBookIssueLimit =2;
 	public static int boyBookIssueLimit = 4;

@@ -2,15 +2,25 @@ package com.librarySpring.model;
 
 import java.io.Serializable;
 import java.sql.Date;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import javax.annotation.Generated;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.xml.bind.annotation.XmlRootElement;
+
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -34,7 +44,14 @@ public class Book implements Serializable{
 	@Column(name="authorName")
     private String authName;
 	
-	
+	@OneToMany(cascade=CascadeType.ALL,mappedBy="book",orphanRemoval=true)
+	@org.hibernate.annotations.Cascade({
+		org.hibernate.annotations.CascadeType.SAVE_UPDATE,
+        org.hibernate.annotations.CascadeType.DELETE,
+        org.hibernate.annotations.CascadeType.MERGE,
+        org.hibernate.annotations.CascadeType.PERSIST
+	})
+	private List<BookTransaction> bookTransactions = new ArrayList<BookTransaction>();
 
 	public Book() {
 		super();
@@ -48,7 +65,14 @@ public class Book implements Serializable{
 		this.authName = authName;
 	}
 
+	public List<BookTransaction> getBookTransactions() {
+		return bookTransactions;
+	}
 
+
+	public void setBookTransactions(List<BookTransaction> bookTransactions) {
+		this.bookTransactions = bookTransactions;
+	}
 
 
 	public int getBook_id() {
